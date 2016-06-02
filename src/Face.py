@@ -1,9 +1,16 @@
+from __future__ import absolute_import, print_function
 import ctypes
 
-from numpy import array, cross, dot, zeros_like, mean
+from cProfile import Profile
+from pstats import Stats
+
+from numpy import array, cross, dot, empty_like, zeros_like, mean, zeros
 from numpy import apply_along_axis, column_stack
 from numpy.linalg import norm
 import numpy
+
+import pyopencl
+from .opencl_cross import prg, ctx, queue, mf
 
 c_cross = ctypes.cdll.LoadLibrary('./lib_cross.so')  # pylint: disable=C0103
 
@@ -86,18 +93,51 @@ class Face:
             assert self.__triangles is not None
             self.__points = self.__vertices[self.__triangles]
 
+        profile = Profile()
+        profile.enable()
+
         first_edges = self.__points[:, 1] - self.__points[:, 0]
         second_edges = self.__points[:, 2] - self.__points[:, 0]
 
-        normal_vectors = cross(first_edges, second_edges).astype('f')
-        normal_vectors_c = normal_vectors.ctypes.get_as_parameter()
+        CL=True
+        if not CL:
+            normal_vectors = cross(first_edges, second_edges).astype('f')
+            normal_vectors_c = normal_vectors.ctypes.get_as_parameter()
 
-        self.__normals = zeros_like(self.__vertices)
-        normals_c = self.__normals.ctypes.get_as_parameter()
+            self.__normals = zeros_like(self.__vertices)
+            normals_c = self.__normals.ctypes.get_as_parameter()
 
-        c_cross.normals(normal_vectors_c, self.__triangles_c, normals_c,
-                        len(self.__triangles))
-        c_cross.normalize(normals_c, len(self.__normals))
+            c_cross.normals(normal_vectors_c, self.__triangles_c, normals_c,
+                            len(self.__triangles))
+            c_cross.normalize(normals_c, len(self.__normals))
+        else:
+
+            z = zeros((first_edges.shape[0], 1), dtype='f')
+            first_edges = column_stack((first_edges, z))
+            second_edges = column_stack((second_edges, z))
+
+            a_g = pyopencl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                     hostbuf=first_edges)
+            b_g = pyopencl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                     hostbuf=second_edges)
+
+            res_g = pyopencl.Buffer(ctx, mf.WRITE_ONLY, first_edges.nbytes)
+            prg.crs(queue, first_edges.shape, None, a_g, b_g, res_g)
+
+            normal_vectors = empty_like(first_edges)
+            pyopencl.enqueue_copy(queue, normal_vectors, res_g)
+            normal_vectors = normal_vectors[:, :3].astype('f')
+            normal_vectors_c = normal_vectors.ctypes.get_as_parameter()
+
+            self.__normals = zeros_like(self.__vertices)
+            normals_c = self.__normals.ctypes.get_as_parameter()
+
+            c_cross.normals(normal_vectors_c, self.__triangles_c, normals_c,
+                            len(self.__triangles))
+            c_cross.normalize(normals_c, len(self.__normals))
+
+        profile.disable()
+        Stats(profile).sort_stats('time').print_stats()
         return self.__normals
 
     def get_normal_map(self):

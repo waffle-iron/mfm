@@ -45,3 +45,19 @@ Fake display explained on
 [askubuntu.com](http://askubuntu.com/questions/453109/add-fake-display-when-no-monitor-is-plugged-in)
 and [xpra.org](https://xpra.org/trac/wiki/Xdummy).
 
+## OpenCL
+
+Got from [OpenCL.jl](https://github.com/JuliaGPU/OpenCL.jl) project.
+
+Install needed libraries
+```
+bash install-amd-sdk.sh
+apt install opencl-headers
+pip install pyopencl
+```
+
+Execute application and tests with environment variable `PYOPENCL_CTX='0'`
+to use default device.
+```
+PYOPENCL_CTX='0' python .
+```
