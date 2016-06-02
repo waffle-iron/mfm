@@ -1,5 +1,5 @@
-cd /tmp
 bash amd_sdk.sh;
+cd /tmp
 tar -xjf AMD-SDK.tar.bz2;
 AMDAPPSDK=${HOME}/AMDAPPSDK;
 export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
