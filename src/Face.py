@@ -1,9 +1,6 @@
 from __future__ import absolute_import, print_function
 import ctypes
 
-from cProfile import Profile
-from pstats import Stats
-
 from numpy import array, cross, dot, empty_like, zeros_like, mean, zeros
 from numpy import apply_along_axis, column_stack
 from numpy.linalg import norm
@@ -93,9 +90,6 @@ class Face:
             assert self.__triangles is not None
             self.__points = self.__vertices[self.__triangles]
 
-        profile = Profile()
-        profile.enable()
-
         first_edges = self.__points[:, 1] - self.__points[:, 0]
         second_edges = self.__points[:, 2] - self.__points[:, 0]
 
@@ -111,7 +105,6 @@ class Face:
                             len(self.__triangles))
             c_cross.normalize(normals_c, len(self.__normals))
         else:
-
             z = zeros((first_edges.shape[0], 1), dtype='f')
             first_edges = column_stack((first_edges, z))
             second_edges = column_stack((second_edges, z))
@@ -136,8 +129,6 @@ class Face:
                             len(self.__triangles))
             c_cross.normalize(normals_c, len(self.__normals))
 
-        profile.disable()
-        Stats(profile).sort_stats('time').print_stats()
         return self.__normals
 
     def get_normal_map(self):
