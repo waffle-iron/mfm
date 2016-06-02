@@ -4,5 +4,6 @@ coverage==4.0
 coveralls==1.1
 pep8==1.7.0
 Pillow==3.2.0
-PyOpenGL==3.1.0
 pylint==1.5.5
+PyOpenGL==3.1.0
+pyopencl==2016.1
