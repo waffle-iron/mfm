@@ -1,4 +1,9 @@
-bash amd_sdk.sh;
+if [ -e "AMD-SDK.tar.bz2" ]
+then
+    cp AMD-SDK.tar.bz2 /tmp/
+else
+    bash amd_sdk.sh;
+fi
 cd /tmp
 tar -xjf AMD-SDK.tar.bz2;
 AMDAPPSDK=${HOME}/AMDAPPSDK;
